@@ -1,1 +1,22 @@
 # ModelForAnalysis
+
+- Vlogs
+- Gaming
+- Tech Reviews
+- Beauty and Fashion
+- DIY and Crafts
+- Cooking and Food
+- Travel
+- Educational
+- Fitness
+- Comedy
+- Music
+- Science and Technology
+- Book Reviews
+- Motivational and Self-Improvement
+- News and Commentary
+- Documentaries
+- Pet and Animal Content
+- Parenting
+- Art and Animation
+- Paranormal and Mystery
