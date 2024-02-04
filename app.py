@@ -1,14 +1,14 @@
 from flask import Flask, request, jsonify
-from analyse import analyseVideo
+from middle import callAnalyse
 
 app = Flask(__name__)
 
 @app.route('/get_genre', methods=['GET'])
 def get_genre():
     path = request.args.get('path', '/path/to/your/video.mp4')
-    
+    videoGenre = request.args.get('genre', 'MrBeast')
     # Use analyseVideo function
-    analysis_results = analyseVideo(path)
+    analysis_results = callAnalyse(path, videoGenre)
     
     # Return the results as JSON
     return jsonify(analysis_results)
