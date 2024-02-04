@@ -37,53 +37,6 @@ def extract_features(audio_data, sr):
     mfccs = librosa.feature.mfcc(y=audio_data, sr=sr, n_mfcc=13)
     return mfccs
 
-def analyseScreenshot(video_path):
-    video_clip = VideoFileClip(video_path)
-    genre_counts = {genre: 0 for genre in genres}
-
-    for timestamp in tqdm(range(0, int(video_clip.duration), 10), desc="Processing Screenshots"):
-        screenshot = video_clip.get_frame(timestamp)
-
-        pil_image = Image.fromarray(screenshot)
-
-        predicted_genre = predict_genre(pil_image)
-
-        genre_counts[predicted_genre] += 1
-
-    video_clip.close()
-    return {'genre_counts': genre_counts}
-
-# def analyseAudio(video_path):
-#     video_clip = VideoFileClip(video_path)
-#     audio = video_clip.audio
-#     chunk_duration = 10  # seconds
-
-#     genre_counts_audio = {genre: 0 for genre in genres}
-#     for start_time in tqdm(range(0, int(video_clip.duration), chunk_duration), desc="Processing Audio"):
-#         end_time = min(start_time + chunk_duration, int(video_clip.duration))
-#         audio_chunk = audio.subclip(start_time, end_time)
-
-#         audio_data, sr = librosa.load(audio_chunk.filename, sr=None)
-
-#         audio_features = extract_features(audio_data, sr)
-
-#         expected_shape = (216, 13)
-#         if audio_features.shape[1] < expected_shape[0]:
-#             audio_features = np.pad(audio_features, ((0, 0), (0, expected_shape[0] - audio_features.shape[1])))
-#         elif audio_features.shape[1] > expected_shape[0]:
-#             audio_features = audio_features[:, :expected_shape[0]]
-
-#         audio_features = audio_features.transpose(1, 0)
-#         audio_features = audio_features.reshape(1, audio_features.shape[0], audio_features.shape[1])
-
-#         audio_features = audio_features[:, :expected_shape[0]]
-#         prediction_audio = model_audio.predict(audio_features)
-#         predicted_genre_audio = genres[np.argmax(prediction_audio)]
-#         genre_counts_audio[predicted_genre_audio] += 1
-
-#     video_clip.close()
-#     return {'genre_counts_audio': genre_counts_audio}
-
 def process_audio_segment(audio_data, model_audio, genres):
     sr = 44100  # Set your desired sample rate
     audio_features = extract_features(audio_data, sr)
@@ -103,30 +56,38 @@ def process_audio_segment(audio_data, model_audio, genres):
 
     return predicted_genre_audio
 
+def analyseScreenshot(video_path):
+    video_clip = VideoFileClip(video_path)
+    genre_counts = {genre: 0 for genre in genres}
+
+    for timestamp in tqdm(range(0, int(video_clip.duration), 10), desc="Processing Screenshots"):
+        screenshot = video_clip.get_frame(timestamp)
+
+        pil_image = Image.fromarray(screenshot)
+
+        predicted_genre = predict_genre(pil_image)
+
+        genre_counts[predicted_genre] += 1
+
+    video_clip.close()
+    return {'genre_counts': genre_counts}
+
 def analyseAudio(video_path):
     video_clip = VideoFileClip(video_path)
     audio = video_clip.audio
-    chunk_duration = 120  # seconds
+    chunk_duration = 360  # seconds
 
     genre_counts_audio = {genre: 0 for genre in genres}
 
-    with ProcessPoolExecutor() as executor:
-        futures = []
+    for start_time in tqdm(range(0, int(video_clip.duration), chunk_duration), desc="Processing Audio"):
+        end_time = min(start_time + chunk_duration, int(video_clip.duration))
+        audio_chunk = audio.subclip(start_time, end_time)
 
-        for start_time in tqdm(range(0, int(video_clip.duration), chunk_duration), desc="Processing Audio"):
-            end_time = min(start_time + chunk_duration, int(video_clip.duration))
-            audio_chunk = audio.subclip(start_time, end_time)
+        audio_data, _ = librosa.load(audio_chunk.filename, sr=None)
 
-            audio_data, _ = librosa.load(audio_chunk.filename, sr=None)
+        predicted_genre_audio = process_audio_segment(audio_data, model_audio, genres)
 
-            # Use functools.partial to pass additional arguments to the function
-            partial_process_audio = partial(process_audio_segment, model_audio=model_audio, genres=genres)
-
-            futures.append(executor.submit(partial_process_audio, audio_data))
-
-        for future in tqdm(futures, desc="Collecting Results"):
-            predicted_genre_audio = future.result()
-            genre_counts_audio[predicted_genre_audio] += 1
+        genre_counts_audio[predicted_genre_audio] += 1
 
     video_clip.close()
     return {'genre_counts_audio': genre_counts_audio}
