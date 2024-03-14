@@ -13,9 +13,9 @@ from functools import partial
 
 tf.get_logger().setLevel('ERROR')  # Suppress TensorFlow warnings
 
-model_image_path = 'video_analysis_vgg16_adamax.h5'
+model_image_path = './largeFiles/video_analysis_vgg16_adamax.h5'
 model_image = load_model(model_image_path)
-model_audio_path = 'audio_analysis_multi_genre.h5'
+model_audio_path = './largeFiles/audio_analysis_multi_genre.h5'
 model_audio = load_model(model_audio_path)
 
 genres = ['MrBeastType', 'VlogType', 'TechReviewType', 'GamingType', 'MinimalistType']

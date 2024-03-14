@@ -1,0 +1,6 @@
+moviepy
+tensorflow
+librosa
+tqdm
+Pillow
+Flask
