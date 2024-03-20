@@ -58,11 +58,11 @@ def get_genre_details(genre):
 
 def callAnalyse(video_path, videoGenre):
     
-    # res = analyseVideo(video_path)
-    res = {
-        'genre_counts': {'MrBeastType': 4, 'VlogType': 3, 'TechReviewType': 94, 'GamingType': 2, 'MinimalistType': 7},
-        'genre_counts_audio': {'MrBeastType': 5, 'VlogType': 0, 'TechReviewType': 0, 'GamingType': 0, 'MinimalistType': 0}
-    }
+    res = analyseVideo(video_path, videoGenre)
+    # res = {
+    #     'genre_counts': {'MrBeastType': 4, 'VlogType': 3, 'TechReviewType': 94, 'GamingType': 2, 'MinimalistType': 7},
+    #     'genre_counts_audio': {'MrBeastType': 5, 'VlogType': 0, 'TechReviewType': 0, 'GamingType': 0, 'MinimalistType': 0}
+    # }
     total_video = sum(res['genre_counts'].values())
     total_audio = sum(res['genre_counts_audio'].values())
 

@@ -4,3 +4,4 @@ librosa
 tqdm
 Pillow
 Flask
+opencv-python

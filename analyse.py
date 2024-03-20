@@ -11,6 +11,8 @@ from PIL import Image
 from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 
+from yoloRun import obj_detect_yolo
+
 tf.get_logger().setLevel('ERROR')  # Suppress TensorFlow warnings
 
 model_image_path = './largeFiles/video_analysis_vgg16_adamax.h5'
@@ -56,7 +58,7 @@ def process_audio_segment(audio_data, model_audio, genres):
 
     return predicted_genre_audio
 
-def analyseScreenshot(video_path):
+def analyseScreenshot(video_path, videoGenre):
     video_clip = VideoFileClip(video_path)
     genre_counts = {genre: 0 for genre in genres}
 
@@ -66,6 +68,11 @@ def analyseScreenshot(video_path):
         pil_image = Image.fromarray(screenshot)
 
         predicted_genre = predict_genre(pil_image)
+
+        if not predict_genre == videoGenre:
+            obj_detect_yolo(screenshot, videoGenre)
+            
+
 
         genre_counts[predicted_genre] += 1
 
@@ -92,9 +99,9 @@ def analyseAudio(video_path):
     video_clip.close()
     return {'genre_counts_audio': genre_counts_audio}
 
-def analyseVideo(video_path):
-    results_screenshot = analyseScreenshot(video_path)
-    results_audio = analyseAudio(video_path)
+def analyseVideo(video_path, videoGenre):
+    results_screenshot = analyseScreenshot(video_path, videoGenre)
+    # results_audio = analyseAudio(video_path)
 
     # Combine the results from both analyses
     combined_results = {
