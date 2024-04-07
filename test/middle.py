@@ -57,7 +57,7 @@ def get_genre_details(genre):
     return genre_details.get(genre, {'Visuals': '', 'Audio': ''})
 
 def callAnalyse(video_path, videoGenre):
-    
+
     res = analyseVideo(video_path, videoGenre)
     # res = {
     #     'genre_counts': {'MrBeastType': 4, 'VlogType': 3, 'TechReviewType': 94, 'GamingType': 2, 'MinimalistType': 7},
