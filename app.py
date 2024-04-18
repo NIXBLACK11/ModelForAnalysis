@@ -7,7 +7,7 @@ app = Flask(__name__)
 def get_genre():
     path = request.args.get('path', '/path/to/your/video.mp4')
     # Use analyseVideo function
-    analysis_results = analyse.analyse.analyse_audio(path)
+    analysis_results = analyse.analyse_audio(path)
     # Return the results as JSON
     return jsonify(analysis_results)
 

@@ -69,7 +69,7 @@ class AudioModel(nn.Module):
 output_size = len(classes)
 in_channels = 1
 
-model_path = "audio/models/model.pth"
+model_path = "./audio/models/model.pth"
 model = AudioModel(in_channels, output_size).to(device)  # Make sure to create an instance of your model before loading the state_dict
 model.load_state_dict(torch.load(model_path))
 model.eval()
@@ -138,19 +138,19 @@ def segment_audio(audio_file, output_dir, segment_duration=10):
 
 
 def analyse_audio(video_file):
-    output_dir = "output"
+    output_dir = "./audio/output"
 
     os.system("rm -rf "+output_dir+"/*")
-
+    print(video_file)
     audio_file = os.path.join(output_dir, "audio.mp3")
     video_to_audio(video_file, audio_file)
 
     segment_audio(audio_file, output_dir)
 
-    os.system("rm -rf output/audio.mp3")
+    os.system("rm -rf ./audio/output/audio.mp3")
     segment_files = get_segment_files(output_dir)
 
     average_predictions = classify_all_segments(segment_files)
     print("Average predictions:", average_predictions)
-    os.system("rm -rf output/*")
+    os.system("rm -rf ./audio/output/*")
     return average_predictions
