@@ -1,4 +1,5 @@
 from moviepy.editor import VideoFileClip, AudioFileClip
+from torch.cuda import current_stream
 from torch.utils.data import Dataset, DataLoader
 import librosa
 import logging
@@ -13,7 +14,14 @@ import torch.optim as optim
 
 
 logging.getLogger("moviepy").setLevel(logging.ERROR)
-classes = ['gamingtype', 'minimalisttype', 'mrbeasttype', 'techreviewtype', 'testvideos', 'vlogtype']
+classes = [
+    "gamingtype",
+    "minimalisttype",
+    "mrbeasttype",
+    "techreviewtype",
+    "testvideos",
+    "vlogtype",
+]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
@@ -29,7 +37,9 @@ def extract_audio_features2(file_path, mfcc=True, chroma=True, mel=True):
     result = np.array([])
     if mfcc:
         mfccs = torchaudio.transforms.MFCC(sample_rate)(waveform)
-        mfccs = torch.mean(mfccs, dim=2).squeeze().numpy()  # Collapse the time dimension
+        mfccs = (
+            torch.mean(mfccs, dim=2).squeeze().numpy()
+        )  # Collapse the time dimension
         result = np.hstack((result, mfccs))
     if chroma:
         chroma = librosa.feature.chroma_stft(y=waveform.numpy()[0], sr=sample_rate)
@@ -49,7 +59,9 @@ class AudioModel(nn.Module):
         self.pool = nn.MaxPool1d(kernel_size=2, stride=2)
         self.conv2 = nn.Conv1d(32, 64, kernel_size=3, stride=1, padding=1)
         self.dropout1 = nn.Dropout(0.25)
-        self.fc1 = nn.Linear(64 * 45, 128)  # Adjusted output size based on input dimensions
+        self.fc1 = nn.Linear(
+            64 * 45, 128
+        )  # Adjusted output size based on input dimensions
         self.dropout2 = nn.Dropout(0.5)
         self.fc2 = nn.Linear(128, output_size)
 
@@ -70,7 +82,9 @@ output_size = len(classes)
 in_channels = 1
 
 model_path = "./audio/models/model.pth"
-model = AudioModel(in_channels, output_size).to(device)  # Make sure to create an instance of your model before loading the state_dict
+model = AudioModel(in_channels, output_size).to(
+    device
+)  # Make sure to create an instance of your model before loading the state_dict
 model.load_state_dict(torch.load(model_path))
 model.eval()
 
@@ -82,24 +96,37 @@ def classify_segment(segment_file):
         outputs = model(features)
 
     probabilities = torch.softmax(outputs, dim=1).squeeze().numpy()
-
+    prediction = np.argmax(probabilities)
     class_probabilities = {classes[i]: probabilities[i] for i in range(len(classes))}
 
-    return class_probabilities
+    return prediction, class_probabilities
 
 
-def classify_all_segments(segment_files):
+def classify_all_segments(segment_files, segment_duration=10):
     class_probabilities_sum = {label: 0.0 for label in classes}
     total_segments = len(segment_files)
-
+    all_predictions = []
+    current_segment = 0
     for segment_file in segment_files:
-        class_probabilities = classify_segment(segment_file)
+        prediction, class_probabilities = classify_segment(segment_file)
+        prediction = classes[prediction]
+        timestamp = {"time": current_segment, "prediction": prediction}
+
+        if current_segment == 0:
+            all_predictions.append(timestamp)
+
+        elif all_predictions[-1]["prediction"]!=timestamp["prediction"]:
+            all_predictions.append(timestamp)
+
+        current_segment += segment_duration
+
         for label, probability in class_probabilities.items():
             class_probabilities_sum[label] += probability
 
-
-    average_probabilities = {label: class_probabilities_sum[label] / total_segments for label in classes}
-    return average_probabilities
+    average_probabilities = {
+        label: class_probabilities_sum[label] / total_segments for label in classes
+    }
+    return all_predictions, average_probabilities
 
 
 def get_segment_files(directory):
@@ -138,19 +165,23 @@ def segment_audio(audio_file, output_dir, segment_duration=10):
 
 
 def analyse_audio(video_file):
+    segment_duration = 10
     output_dir = "./audio/output"
 
-    os.system("rm -rf "+output_dir+"/*")
-    print(video_file)
+    os.system("rm -rf " + output_dir + "/*")
     audio_file = os.path.join(output_dir, "audio.mp3")
     video_to_audio(video_file, audio_file)
 
-    segment_audio(audio_file, output_dir)
+    segment_audio(audio_file, output_dir, segment_duration)
 
     os.system("rm -rf ./audio/output/audio.mp3")
     segment_files = get_segment_files(output_dir)
 
-    average_predictions = classify_all_segments(segment_files)
+    all_predictions, average_predictions = classify_all_segments(segment_files, segment_duration)
     print("Average predictions:", average_predictions)
     os.system("rm -rf ./audio/output/*")
-    return average_predictions
+
+    result = {"all_predictions":all_predictions, "average_predictions": average_predictions}
+
+    return result
+

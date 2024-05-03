@@ -51,13 +51,28 @@ def analyse_video(video_path, chunk_size=10, output_folder='./video/output'):
     class_probabilities_sum = {label: 0.0 for label in classes}
     chunk_files = segment_video(video_path, output_folder, chunk_size)
     total_segments = len(chunk_files)
+    current_segment = 0
+    all_predictions = []
     for chunk_file in chunk_files:
         pil_image = Image.open(chunk_file)
         pil_image = preprocess_image(pil_image)
         class_probabilities = model.predict(pil_image)
+
+        prediction = classes[np.argmax(class_probabilities)]
+        timestamp = {"time":current_segment, "prediction": prediction}
+
+        if current_segment==0:
+            all_predictions.append(timestamp)
+
+        elif all_predictions[-1]["prediction"]!=timestamp["prediction"]:
+            all_predictions.append(timestamp)
+
+        current_segment += chunk_size
+
         for i, label in enumerate(classes):
             class_probabilities_sum[label] += class_probabilities[0][i]
     average_probabilities = {label.lower(): class_probabilities_sum[label] / total_segments for label in classes}
-    os.system("rm ./video/output/*")
-    return average_probabilities
 
+    result = {"average_probabilities": average_probabilities, "all_predictions": all_predictions}
+    os.system("rm ./video/output/*")
+    return result
