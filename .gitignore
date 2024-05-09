@@ -1,4 +1,8 @@
 __pycache__
+/audio/models
+/video/models
+/audio/models/*
+/video/models/*
 /largeFiles/
 /env/
 /savedScreenshots/
